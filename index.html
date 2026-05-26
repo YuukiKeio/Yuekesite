@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>约课信息生成器</title>
+<title>约课 · 教室提醒</title>
 <style>
   /* ── CSS 变量 ── */
   :root {
@@ -19,11 +19,12 @@
     --out-bg:   #eef8f6;
     --placeholder: #9abebb;
     --accent: #0071e3;
-    --accent-dark: #005bbf;
     --green:  #28a745;
     --clear-bg:    #e4f4f1;
     --clear-color: #4a7570;
     --toast-bg: #1a2e2c;
+    --tab-bg: rgba(255,255,255,0.55);
+    --tab-active: rgba(255,255,255,0.92);
   }
   [data-theme="dark"] {
     --bg-a: #0c1d1b;
@@ -38,11 +39,12 @@
     --out-bg:   #0f201e;
     --placeholder: #3e6560;
     --accent: #3aa0ff;
-    --accent-dark: #1a88ee;
     --green:  #2ecc6a;
     --clear-bg:    #172e2b;
     --clear-color: #6a9e99;
     --toast-bg: #d8eeec;
+    --tab-bg: rgba(18,32,30,0.5);
+    --tab-active: rgba(18,32,30,0.95);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -61,99 +63,90 @@
 
   /* ── 标题栏 ── */
   .header {
-    display: flex;
-    align-items: center;
+    display: flex; align-items: center;
     justify-content: space-between;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
   }
-
-  h1 {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    color: var(--text);
-  }
+  h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
 
   .theme-btn {
-    width: 38px; height: 38px;
-    border-radius: 50%;
+    width: 38px; height: 38px; border-radius: 50%;
     border: 1.5px solid var(--border);
-    background: var(--card);
-    cursor: pointer;
-    font-size: 18px;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-    color: var(--text);
-    box-shadow: var(--card-shadow);
+    background: var(--card); cursor: pointer;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; color: var(--text); box-shadow: var(--card-shadow);
   }
   .theme-btn:hover { transform: scale(1.1); }
+
+  /* ── Tab 切换 ── */
+  .tab-bar {
+    display: flex; gap: 6px;
+    background: var(--tab-bg);
+    border-radius: 14px; padding: 5px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  [data-theme="dark"] .tab-bar { border-color: rgba(255,255,255,0.06); }
+
+  .tab-btn {
+    flex: 1; padding: 9px 0;
+    border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    background: transparent; color: var(--sub);
+  }
+  .tab-btn.active {
+    background: var(--tab-active);
+    color: var(--text);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+  }
 
   /* ── カード ── */
   .card {
     background: var(--card);
-    border-radius: 16px;
-    padding: 18px 20px;
-    margin-bottom: 10px;
-    box-shadow: var(--card-shadow);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    border-radius: 16px; padding: 18px 20px;
+    margin-bottom: 10px; box-shadow: var(--card-shadow);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.45);
     transition: background 0.3s, box-shadow 0.3s;
   }
-  [data-theme="dark"] .card {
-    border-color: rgba(255,255,255,0.06);
-  }
+  [data-theme="dark"] .card { border-color: rgba(255,255,255,0.06); }
 
   .field-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--sub);
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 10px;
+    font-size: 11px; font-weight: 700; color: var(--sub);
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px;
   }
 
-  /* ── 输入 ── */
   .field-row { display: flex; gap: 10px; align-items: center; }
 
-  input, select {
-    width: 100%;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 15px;
-    color: var(--text);
-    background: var(--input-bg);
-    outline: none;
+  input {
+    width: 100%; border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+    font-size: 15px; color: var(--text);
+    background: var(--input-bg); outline: none;
     transition: border-color 0.15s, background 0.2s;
-    appearance: none;
-    -webkit-appearance: none;
+    appearance: none; -webkit-appearance: none;
   }
   input:focus { border-color: var(--accent); background: var(--card); }
   input::placeholder { color: var(--placeholder); }
 
   .time-sep { font-size: 17px; color: var(--sub); flex-shrink: 0; }
 
-  /* ── 时间 tag ── */
-  .time-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
-
-  /* ── 人数 ── */
+  /* ── 人数步进 ── */
   .people-row { display: flex; align-items: center; gap: 12px; }
-
   .stepper {
     display: flex; align-items: center;
-    border: 1.5px solid var(--border);
-    border-radius: 10px; overflow: hidden;
-    background: var(--input-bg);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    overflow: hidden; background: var(--input-bg);
   }
   .stepper button {
-    width: 40px; height: 40px; border: none;
-    background: transparent; font-size: 20px;
-    cursor: pointer; color: var(--accent);
+    width: 40px; height: 40px; border: none; background: transparent;
+    font-size: 20px; cursor: pointer; color: var(--accent);
     display: flex; align-items: center; justify-content: center;
     transition: background 0.1s; flex-shrink: 0;
   }
-  .stepper button:hover { background: var(--tag-bg); }
+  .stepper button:hover  { background: var(--tag-bg); }
   .stepper button:active { opacity: 0.7; }
   .stepper-val {
     min-width: 36px; text-align: center;
@@ -164,62 +157,48 @@
   }
   .people-label { font-size: 14px; color: var(--sub); }
 
-  /* ── 通用 tag 样式 ── */
+  /* ── Tag 通用 ── */
   .tags-wrap, .course-tags, .time-tags {
     display: flex; flex-wrap: wrap; gap: 8px;
   }
   .course-tags { margin-bottom: 10px; }
+  .time-tags   { margin-top: 10px; }
 
   .tag-btn, .course-tag, .time-tag {
-    border: 1.5px solid var(--border);
-    border-radius: 20px;
-    padding: 7px 14px;
-    font-size: 13px;
-    cursor: pointer;
-    background: var(--tag-bg);
-    color: var(--sub);
-    transition: all 0.15s;
-    user-select: none;
+    border: 1.5px solid var(--border); border-radius: 20px;
+    padding: 7px 14px; font-size: 13px; cursor: pointer;
+    background: var(--tag-bg); color: var(--sub);
+    transition: all 0.15s; user-select: none;
   }
   .tag-btn:hover, .course-tag:hover, .time-tag:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--accent); color: var(--accent);
   }
   .tag-btn.active, .course-tag.active, .time-tag.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
+    background: var(--accent); border-color: var(--accent); color: #fff;
   }
 
   /* ── 输出框 ── */
   .output-box {
-    background: var(--out-bg);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    font-size: 15px;
-    line-height: 1.85;
-    white-space: pre-wrap;
-    word-break: break-all;
-    min-height: 130px;
-    color: var(--text);
+    background: var(--out-bg); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 14px 16px;
+    font-size: 15px; line-height: 1.85;
+    white-space: pre-wrap; word-break: break-all;
+    min-height: 110px; color: var(--text);
     transition: background 0.3s;
   }
-  .output-placeholder { color: var(--placeholder); font-size: 14px; }
+  /* 教室提醒输出用等宽字体更美观 */
+  .output-box.mono { font-family: "SF Mono", "Menlo", "Courier New", monospace; font-size: 14px; }
+  .output-placeholder { color: var(--placeholder); font-size: 14px; font-family: inherit; }
 
-  /* ── 按钮 ── */
+  /* ── 按钮行 ── */
   .btn-row { display: flex; gap: 10px; margin-top: 14px; }
-
   .btn {
-    flex: 1; padding: 12px 0;
-    border-radius: 12px;
-    font-size: 15px; font-weight: 600;
-    cursor: pointer; border: none;
+    flex: 1; padding: 12px 0; border-radius: 12px;
+    font-size: 15px; font-weight: 600; cursor: pointer; border: none;
     transition: opacity 0.15s, transform 0.1s;
     display: flex; align-items: center; justify-content: center; gap: 5px;
   }
   .btn:active { opacity: 0.8; transform: scale(0.97); }
-
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-copy    { background: var(--green);  color: #fff; }
   .btn-clear   { background: var(--clear-bg); color: var(--clear-color); }
@@ -229,392 +208,559 @@
   .toast {
     position: fixed; bottom: 30px; left: 50%;
     transform: translateX(-50%) translateY(60px);
-    background: var(--toast-bg); color: var(--card);
-    padding: 10px 20px; border-radius: 20px;
-    font-size: 14px; opacity: 0;
-    transition: all 0.25s; pointer-events: none; z-index: 999;
+    background: var(--toast-bg); color: #fff;
+    padding: 10px 20px; border-radius: 20px; font-size: 14px;
+    opacity: 0; transition: all 0.25s; pointer-events: none; z-index: 999;
   }
-  [data-theme="dark"] .toast { color: var(--bg-a); }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* ── Section 切换 ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
   @media (max-width: 400px) {
-    h1 { font-size: 19px; }
+    h1 { font-size: 18px; }
     .btn { font-size: 13px; padding: 11px 0; }
   }
 </style>
 </head>
 <body>
-
 <div class="container">
 
+  <!-- 标题栏 -->
   <div class="header">
-    <h1>约课信息生成器</h1>
-    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="切换深夜模式">🌙</button>
+    <h1>约课 · 教室提醒</h1>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
   </div>
 
-  <!-- 日期 -->
-  <div class="card">
-    <div class="field-label">日期</div>
-    <input type="date" id="dateInput">
+  <!-- Tab 切换 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-book"   onclick="switchTab('book')">📋 约课预约</button>
+    <button class="tab-btn"        id="tab-notify" onclick="switchTab('notify')">🔔 教室提醒</button>
   </div>
 
-  <!-- 时间 -->
-  <div class="card">
-    <div class="field-label">时间</div>
-    <div class="field-row">
-      <input type="time" id="startTime" value="14:00" oninput="onStartTimeChange()">
-      <span class="time-sep">—</span>
-      <input type="time" id="endTime" value="16:00">
+  <!-- ══════════ Section 1：约课预约 ══════════ -->
+  <div class="section active" id="sec-book">
+
+    <div class="card">
+      <div class="field-label">日期</div>
+      <input type="date" id="b-date">
     </div>
-    <div class="time-tags" id="timeTags"></div>
-  </div>
 
-  <!-- 人数 -->
-  <div class="card">
-    <div class="field-label">人数</div>
-    <div class="people-row">
-      <div class="stepper">
-        <button onclick="changePeople(-1)">−</button>
-        <div class="stepper-val" id="peopleVal">2</div>
-        <button onclick="changePeople(1)">＋</button>
+    <div class="card">
+      <div class="field-label">时间</div>
+      <div class="field-row">
+        <input type="time" id="b-start" value="14:00" oninput="bOnStartChange()">
+        <span class="time-sep">—</span>
+        <input type="time" id="b-end" value="16:00">
       </div>
-      <span class="people-label">人</span>
+      <div class="time-tags" id="b-timeTags"></div>
     </div>
-  </div>
 
-  <!-- 内容 -->
-  <div class="card">
-    <div class="field-label">课程内容</div>
-    <div class="course-tags" id="courseTags"></div>
-    <input type="text" id="courseInput" placeholder="其他（手动输入）">
-  </div>
-
-  <!-- 姓名 -->
-  <div class="card">
-    <div class="field-label">姓名</div>
-    <input type="text" id="nameInput" placeholder="请输入姓名">
-  </div>
-
-  <!-- 附加要求 -->
-  <div class="card">
-    <div class="field-label">附加要求（可多选）</div>
-    <div class="tags-wrap" id="tagsWrap"></div>
-  </div>
-
-  <!-- 备注 -->
-  <div class="card">
-    <div class="field-label">备注（可选）</div>
-    <input type="text" id="remarkInput" placeholder="其他补充说明…">
-  </div>
-
-  <!-- 输出 -->
-  <div class="card">
-    <div class="field-label">生成文本</div>
-    <div class="output-box" id="outputBox">
-      <span class="output-placeholder">点击「生成」查看结果</span>
+    <div class="card">
+      <div class="field-label">人数</div>
+      <div class="people-row">
+        <div class="stepper">
+          <button onclick="changePeople(-1)">−</button>
+          <div class="stepper-val" id="b-peopleVal">2</div>
+          <button onclick="changePeople(1)">＋</button>
+        </div>
+        <span class="people-label">人</span>
+      </div>
     </div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="generate()">生成</button>
-      <button class="btn btn-copy" id="copyBtn" onclick="copyText()">复制</button>
-      <button class="btn btn-clear" onclick="clearAll()">清空</button>
+
+    <div class="card">
+      <div class="field-label">课程内容</div>
+      <div class="course-tags" id="b-courseTags"></div>
+      <input type="text" id="b-course" placeholder="其他（手动输入）">
     </div>
-  </div>
 
-</div>
+    <div class="card">
+      <div class="field-label">姓名</div>
+      <input type="text" id="b-name" placeholder="请输入姓名">
+    </div>
 
+    <div class="card">
+      <div class="field-label">附加要求（可多选）</div>
+      <div class="tags-wrap" id="b-reqTags"></div>
+    </div>
+
+    <div class="card">
+      <div class="field-label">备注（可选）</div>
+      <input type="text" id="b-remark" placeholder="其他补充说明…">
+    </div>
+
+    <div class="card">
+      <div class="field-label">生成文本</div>
+      <div class="output-box" id="b-output">
+        <span class="output-placeholder">点击「生成」查看结果</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="bGenerate()">生成</button>
+        <button class="btn btn-copy" id="b-copyBtn" onclick="bCopy()">复制</button>
+        <button class="btn btn-clear" onclick="bClear()">清空</button>
+      </div>
+    </div>
+
+  </div><!-- /sec-book -->
+
+  <!-- ══════════ Section 2：教室提醒 ══════════ -->
+  <div class="section" id="sec-notify">
+
+    <div class="card">
+      <div class="field-label">学生姓名</div>
+      <input type="text" id="n-name" placeholder="例：王晨">
+    </div>
+
+    <div class="card">
+      <div class="field-label">课程类型</div>
+      <div class="course-tags" id="n-courseTags"></div>
+      <input type="text" id="n-course" placeholder="其他（手动输入）">
+    </div>
+
+    <div class="card">
+      <div class="field-label">日期</div>
+      <input type="date" id="n-date">
+    </div>
+
+    <div class="card">
+      <div class="field-label">时间</div>
+      <div class="field-row">
+        <input type="time" id="n-start" value="14:00" oninput="nOnStartChange()">
+        <span class="time-sep">—</span>
+        <input type="time" id="n-end" value="16:00">
+      </div>
+      <div class="time-tags" id="n-timeTags"></div>
+    </div>
+
+    <div class="card">
+      <div class="field-label">教室</div>
+      <input type="text" id="n-room" placeholder="例：304">
+    </div>
+
+    <div class="card">
+      <div class="field-label">生成提醒</div>
+      <div class="output-box mono" id="n-output">
+        <span class="output-placeholder">点击「生成」查看结果</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="nGenerate()">生成</button>
+        <button class="btn btn-copy" id="n-copyBtn" onclick="nCopy()">复制</button>
+        <button class="btn btn-clear" onclick="nClear()">清空</button>
+      </div>
+    </div>
+
+  </div><!-- /sec-notify -->
+
+</div><!-- /container -->
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── 常量 ──────────────────────────────────────────
-  const TAGS = [
-    "麻烦想要有空调的教室",
-    "麻烦想要大一点的教室",
-    "麻烦想要有投影的教室",
-  ];
+// ═══════════════════════════════════════════════
+//  常量
+// ═══════════════════════════════════════════════
+const WEEKDAYS   = ["日","月","火","水","木","金","土"];
+const COURSES    = ["面谈","VIP","VIP日语","VIP文综","VIP数学"];
+const REQ_TAGS   = ["麻烦想要有空调的教室","麻烦想要大一点的教室","麻烦想要有投影的教室"];
+const DURATIONS  = [["1小时",1],["1.5小时",1.5],["2小时",2],["2.5小时",2.5],["3小时",3]];
 
-  const COURSES = ["面谈", "VIP", "VIP日语", "VIP文综", "VIP数学"];
+// ═══════════════════════════════════════════════
+//  约课状态
+// ═══════════════════════════════════════════════
+let bPeople = 2, bActiveCourse = "", bActiveDuration = null;
+let bActiveTags = new Set(), bText = "";
 
-  // 时间 tag：[显示文字, 小时数]
-  const TIME_DURATIONS = [
-    ["1小时",   1],
-    ["1.5小时", 1.5],
-    ["2小时",   2],
-    ["2.5小时", 2.5],
-    ["3小时",   3],
-  ];
+// ═══════════════════════════════════════════════
+//  教室提醒状态
+// ═══════════════════════════════════════════════
+let nActiveCourse = "", nActiveDuration = null, nText = "";
 
-  const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+// ═══════════════════════════════════════════════
+//  Tab
+// ═══════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("sec-" + tab).classList.add("active");
+  document.getElementById("tab-" + tab).classList.add("active");
+  localStorage.setItem("activeTab", tab);
+}
 
-  // ── 状态 ──────────────────────────────────────────
-  let people = 2;
-  let activeTags = new Set();
-  let activeCourse = "";
-  let activeDuration = null; // 数字或 null
-  let generatedText = "";
+// ═══════════════════════════════════════════════
+//  工具
+// ═══════════════════════════════════════════════
+function todayValue() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function pad(n) { return String(n).padStart(2,"0"); }
 
-  // ── 初始化 ────────────────────────────────────────
-  function init() {
-    document.getElementById("dateInput").value = formatDateValue(new Date());
+// "YYYY-MM-DD" → "5月27日（水）"
+function fmtDateJa(s) {
+  if (!s) return "";
+  const d = new Date(s + "T00:00:00");
+  return `${d.getMonth()+1}月${d.getDate()}日（${WEEKDAYS[d.getDay()]}）`;
+}
 
-    // 时间 tag
-    const tt = document.getElementById("timeTags");
-    TIME_DURATIONS.forEach(([label, hours]) => {
-      const btn = document.createElement("button");
-      btn.className = "time-tag";
-      btn.textContent = label;
-      btn.dataset.hours = hours;
-      btn.onclick = () => selectDuration(hours, btn);
-      tt.appendChild(btn);
-    });
+// "YYYY-MM-DD" → "2026 05 27 （水）"
+function fmtDateNotify(s) {
+  if (!s) return "";
+  const d = new Date(s + "T00:00:00");
+  return `${d.getFullYear()} ${pad(d.getMonth()+1)} ${pad(d.getDate())} （${WEEKDAYS[d.getDay()]}）`;
+}
 
-    // 课程 tag
-    const ct = document.getElementById("courseTags");
-    COURSES.forEach(c => {
-      const btn = document.createElement("button");
-      btn.className = "course-tag";
-      btn.textContent = c;
-      btn.onclick = () => selectCourse(c, btn);
-      ct.appendChild(btn);
-    });
+function calcEndTime(startVal, hours) {
+  if (!startVal) return "";
+  const [h, m] = startVal.split(":").map(Number);
+  const total  = h * 60 + m + hours * 60;
+  return `${pad(Math.floor(total/60)%24)}:${pad(total%60)}`;
+}
 
-    document.getElementById("courseInput").addEventListener("input", () => {
-      activeCourse = "";
-      document.querySelectorAll(".course-tag").forEach(b => b.classList.remove("active"));
-    });
+// 构建 tag 按钮（通用）
+function buildTags(containerId, items, activeSet, onToggle, cls="tag-btn") {
+  const wrap = document.getElementById(containerId);
+  items.forEach(item => {
+    const btn = document.createElement("button");
+    btn.className = cls;
+    btn.textContent = item;
+    if (activeSet && activeSet.has(item)) btn.classList.add("active");
+    btn.onclick = () => onToggle(item, btn);
+    wrap.appendChild(btn);
+  });
+}
 
-    // 附加要求 tag
-    const tw = document.getElementById("tagsWrap");
-    TAGS.forEach(t => {
-      const btn = document.createElement("button");
-      btn.className = "tag-btn";
-      btn.textContent = t;
-      btn.onclick = () => toggleTag(t, btn);
-      tw.appendChild(btn);
-    });
+// ═══════════════════════════════════════════════
+//  初始化
+// ═══════════════════════════════════════════════
+function init() {
+  // ── 约课 ─────────────────────────────────────
+  document.getElementById("b-date").value = todayValue();
 
-    // 深色模式
-    const savedTheme = localStorage.getItem("theme") || "light";
-    applyTheme(savedTheme);
+  // 时间 tag
+  DURATIONS.forEach(([label, hours]) => {
+    const btn = document.createElement("button");
+    btn.className = "time-tag"; btn.textContent = label; btn.dataset.hours = hours;
+    btn.onclick = () => bSelectDuration(hours, btn);
+    document.getElementById("b-timeTags").appendChild(btn);
+  });
 
-    restoreState();
+  // 课程 tag
+  COURSES.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "course-tag"; btn.textContent = c;
+    btn.onclick = () => bSelectCourse(c, btn);
+    document.getElementById("b-courseTags").appendChild(btn);
+  });
+  document.getElementById("b-course").addEventListener("input", () => {
+    bActiveCourse = "";
+    document.querySelectorAll("#b-courseTags .course-tag").forEach(b => b.classList.remove("active"));
+  });
+
+  // 附加要求
+  buildTags("b-reqTags", REQ_TAGS, bActiveTags, bToggleReq);
+
+  // ── 教室提醒 ──────────────────────────────────
+  document.getElementById("n-date").value = todayValue();
+
+  DURATIONS.forEach(([label, hours]) => {
+    const btn = document.createElement("button");
+    btn.className = "time-tag"; btn.textContent = label; btn.dataset.hours = hours;
+    btn.onclick = () => nSelectDuration(hours, btn);
+    document.getElementById("n-timeTags").appendChild(btn);
+  });
+
+  COURSES.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "course-tag"; btn.textContent = c;
+    btn.onclick = () => nSelectCourse(c, btn);
+    document.getElementById("n-courseTags").appendChild(btn);
+  });
+  document.getElementById("n-course").addEventListener("input", () => {
+    nActiveCourse = "";
+    document.querySelectorAll("#n-courseTags .course-tag").forEach(b => b.classList.remove("active"));
+  });
+
+  // ── 恢复 ─────────────────────────────────────
+  const savedTab = localStorage.getItem("activeTab") || "book";
+  switchTab(savedTab);
+  applyTheme(localStorage.getItem("theme") || "light");
+  bRestoreState();
+  nRestoreState();
+}
+
+// ═══════════════════════════════════════════════
+//  约课逻辑
+// ═══════════════════════════════════════════════
+function changePeople(d) {
+  bPeople = Math.max(1, Math.min(20, bPeople + d));
+  document.getElementById("b-peopleVal").textContent = bPeople;
+}
+
+function bSelectDuration(hours, btn) {
+  if (bActiveDuration === hours) {
+    bActiveDuration = null; btn.classList.remove("active");
+  } else {
+    bActiveDuration = hours;
+    document.querySelectorAll("#b-timeTags .time-tag").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("b-end").value = calcEndTime(document.getElementById("b-start").value, hours);
   }
+}
+function bOnStartChange() {
+  if (bActiveDuration !== null)
+    document.getElementById("b-end").value = calcEndTime(document.getElementById("b-start").value, bActiveDuration);
+}
 
-  // ── 日期格式 ──────────────────────────────────────
-  function formatDateValue(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+function bSelectCourse(c, btn) {
+  if (bActiveCourse === c) { bActiveCourse = ""; btn.classList.remove("active"); }
+  else {
+    bActiveCourse = c;
+    document.querySelectorAll("#b-courseTags .course-tag").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("b-course").value = "";
   }
+}
 
-  function formatDateDisplay(dateStr) {
-    if (!dateStr) return "";
-    const d = new Date(dateStr + "T00:00:00");
-    const m = d.getMonth() + 1;
-    const day = d.getDate();
-    const w = WEEKDAYS[d.getDay()];
-    return `${m}月${day}日（${w}）`;
-  }
+function bToggleReq(tag, btn) {
+  if (bActiveTags.has(tag)) { bActiveTags.delete(tag); btn.classList.remove("active"); }
+  else { bActiveTags.add(tag); btn.classList.add("active"); }
+}
 
-  // ── 人数 ──────────────────────────────────────────
-  function changePeople(delta) {
-    people = Math.max(1, Math.min(20, people + delta));
-    document.getElementById("peopleVal").textContent = people;
-  }
+function bGenerate() {
+  const date   = document.getElementById("b-date").value;
+  const start  = document.getElementById("b-start").value;
+  const end    = document.getElementById("b-end").value;
+  const course = bActiveCourse || document.getElementById("b-course").value.trim();
+  const name   = document.getElementById("b-name").value.trim();
+  const remark = document.getElementById("b-remark").value.trim();
+  const tagStr = bActiveTags.size ? `（${[...bActiveTags].join("、")}）` : "";
 
-  // ── 时间 tag ──────────────────────────────────────
-  function selectDuration(hours, btn) {
-    if (activeDuration === hours) {
-      activeDuration = null;
-      btn.classList.remove("active");
-    } else {
-      activeDuration = hours;
-      document.querySelectorAll(".time-tag").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      applyDuration(hours);
-    }
-  }
+  const lines = [`教务老师您好，想要预约一下教室${tagStr}`];
+  if (date)         lines.push(`日期：${fmtDateJa(date)}`);
+  if (start && end) lines.push(`时间：${start}-${end}`);
+  lines.push(`人数：${bPeople}人`);
+  if (course) lines.push(`内容：${course}`);
+  if (name)   lines.push(`姓名：${name}`);
+  if (remark) lines.push(`备注：${remark}`);
 
-  function applyDuration(hours) {
-    const startVal = document.getElementById("startTime").value;
-    if (!startVal) return;
-    const [h, m] = startVal.split(":").map(Number);
-    const totalMins = h * 60 + m + hours * 60;
-    const endH = Math.floor(totalMins / 60) % 24;
-    const endM = totalMins % 60;
-    document.getElementById("endTime").value =
-      String(endH).padStart(2, "0") + ":" + String(endM).padStart(2, "0");
-  }
+  bText = lines.join("\n");
+  document.getElementById("b-output").textContent = bText;
+  bSaveState();
+}
 
-  function onStartTimeChange() {
-    if (activeDuration !== null) applyDuration(activeDuration);
-  }
+async function bCopy() {
+  if (!bText) { showToast("请先点击「生成」"); return; }
+  await doCopy(bText, "b-copyBtn");
+}
 
-  // ── 课程单选 ──────────────────────────────────────
-  function selectCourse(course, btn) {
-    if (activeCourse === course) {
-      activeCourse = "";
-      btn.classList.remove("active");
-    } else {
-      activeCourse = course;
-      document.querySelectorAll(".course-tag").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      document.getElementById("courseInput").value = "";
-    }
-  }
+function bClear() {
+  document.getElementById("b-date").value  = todayValue();
+  document.getElementById("b-start").value = "14:00";
+  document.getElementById("b-end").value   = "16:00";
+  document.getElementById("b-course").value = "";
+  document.getElementById("b-name").value   = "";
+  document.getElementById("b-remark").value = "";
+  bPeople = 2; document.getElementById("b-peopleVal").textContent = "2";
+  bActiveTags.clear(); bActiveCourse = ""; bActiveDuration = null;
+  document.querySelectorAll("#b-reqTags .tag-btn, #b-courseTags .course-tag, #b-timeTags .time-tag")
+    .forEach(b => b.classList.remove("active"));
+  bText = "";
+  document.getElementById("b-output").innerHTML = '<span class="output-placeholder">点击「生成」查看结果</span>';
+  localStorage.removeItem("b_state");
+  showToast("已清空");
+}
 
-  // ── 附加要求 tag ──────────────────────────────────
-  function toggleTag(tag, btn) {
-    if (activeTags.has(tag)) {
-      activeTags.delete(tag);
-      btn.classList.remove("active");
-    } else {
-      activeTags.add(tag);
-      btn.classList.add("active");
-    }
-  }
+function bSaveState() {
+  localStorage.setItem("b_state", JSON.stringify({
+    date: document.getElementById("b-date").value,
+    start: document.getElementById("b-start").value,
+    end: document.getElementById("b-end").value,
+    course: document.getElementById("b-course").value,
+    bActiveCourse, bActiveDuration,
+    name: document.getElementById("b-name").value,
+    remark: document.getElementById("b-remark").value,
+    bPeople, tags: [...bActiveTags],
+  }));
+}
 
-  // ── 生成 ──────────────────────────────────────────
-  function generate() {
-    const date   = document.getElementById("dateInput").value;
-    const start  = document.getElementById("startTime").value;
-    const end    = document.getElementById("endTime").value;
-    const course = activeCourse || document.getElementById("courseInput").value.trim();
-    const name   = document.getElementById("nameInput").value.trim();
-    const remark = document.getElementById("remarkInput").value.trim();
-
-    const tagStr = [...activeTags].length
-      ? `（${[...activeTags].join("、")}）` : "";
-
-    const lines = [];
-    lines.push(`教务老师您好，想要预约一下教室${tagStr}`);
-    if (date)          lines.push(`日期：${formatDateDisplay(date)}`);
-    if (start && end)  lines.push(`时间：${start}-${end}`);
-    lines.push(`人数：${people}人`);
-    if (course)        lines.push(`内容：${course}`);
-    if (name)          lines.push(`姓名：${name}`);
-    if (remark)        lines.push(`备注：${remark}`);
-
-    generatedText = lines.join("\n");
-    document.getElementById("outputBox").textContent = generatedText;
-    saveState();
-  }
-
-  // ── 复制 ──────────────────────────────────────────
-  async function copyText() {
-    if (!generatedText) { showToast("请先点击「生成」"); return; }
-    try {
-      await navigator.clipboard.writeText(generatedText);
-      const btn = document.getElementById("copyBtn");
-      btn.textContent = "已复制 ✓";
-      btn.classList.add("copied");
-      setTimeout(() => { btn.textContent = "复制"; btn.classList.remove("copied"); }, 2000);
-      showToast("已复制到剪贴板");
-    } catch {
-      showToast("复制失败，请手动选中复制");
-    }
-  }
-
-  // ── 清空 ──────────────────────────────────────────
-  function clearAll() {
-    document.getElementById("dateInput").value    = formatDateValue(new Date());
-    document.getElementById("startTime").value    = "14:00";
-    document.getElementById("endTime").value      = "16:00";
-    document.getElementById("courseInput").value  = "";
-    document.getElementById("nameInput").value    = "";
-    document.getElementById("remarkInput").value  = "";
-    people = 2;
-    document.getElementById("peopleVal").textContent = "2";
-
-    activeTags.clear();
-    document.querySelectorAll(".tag-btn").forEach(b => b.classList.remove("active"));
-    activeCourse = "";
-    document.querySelectorAll(".course-tag").forEach(b => b.classList.remove("active"));
-    activeDuration = null;
-    document.querySelectorAll(".time-tag").forEach(b => b.classList.remove("active"));
-
-    generatedText = "";
-    document.getElementById("outputBox").innerHTML =
-      '<span class="output-placeholder">点击「生成」查看结果</span>';
-    localStorage.removeItem("booking_state");
-    showToast("已清空");
-  }
-
-  // ── 深夜模式 ──────────────────────────────────────
-  function toggleTheme() {
-    const current = document.documentElement.getAttribute("data-theme");
-    const next = current === "dark" ? "light" : "dark";
-    applyTheme(next);
-    localStorage.setItem("theme", next);
-  }
-
-  function applyTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-    document.getElementById("themeBtn").textContent = theme === "dark" ? "☀️" : "🌙";
-  }
-
-  // ── Toast ─────────────────────────────────────────
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 2000);
-  }
-
-  // ── 持久化 ────────────────────────────────────────
-  function saveState() {
-    localStorage.setItem("booking_state", JSON.stringify({
-      date:          document.getElementById("dateInput").value,
-      start:         document.getElementById("startTime").value,
-      end:           document.getElementById("endTime").value,
-      course:        document.getElementById("courseInput").value,
-      activeCourse,
-      activeDuration,
-      name:          document.getElementById("nameInput").value,
-      remark:        document.getElementById("remarkInput").value,
-      people,
-      tags: [...activeTags],
-    }));
-  }
-
-  function restoreState() {
-    const raw = localStorage.getItem("booking_state");
-    if (!raw) return;
-    try {
-      const s = JSON.parse(raw);
-      if (s.date)   document.getElementById("dateInput").value  = s.date;
-      if (s.start)  document.getElementById("startTime").value  = s.start;
-      if (s.end)    document.getElementById("endTime").value    = s.end;
-      if (s.course) document.getElementById("courseInput").value = s.course;
-      if (s.activeCourse) {
-        activeCourse = s.activeCourse;
-        document.querySelectorAll(".course-tag").forEach(b => {
-          if (b.textContent === s.activeCourse) b.classList.add("active");
-        });
-      }
-      if (s.activeDuration != null) {
-        activeDuration = s.activeDuration;
-        document.querySelectorAll(".time-tag").forEach(b => {
-          if (Number(b.dataset.hours) === s.activeDuration) b.classList.add("active");
-        });
-      }
-      if (s.name)   document.getElementById("nameInput").value   = s.name;
-      if (s.remark) document.getElementById("remarkInput").value = s.remark;
-      if (s.people) {
-        people = s.people;
-        document.getElementById("peopleVal").textContent = people;
-      }
-      if (s.tags) s.tags.forEach(tag => {
-        activeTags.add(tag);
-        document.querySelectorAll(".tag-btn").forEach(b => {
-          if (b.textContent === tag) b.classList.add("active");
-        });
+function bRestoreState() {
+  const raw = localStorage.getItem("b_state") || localStorage.getItem("booking_state");
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    if (s.date)  document.getElementById("b-date").value  = s.date;
+    if (s.start) document.getElementById("b-start").value = s.start;
+    if (s.end)   document.getElementById("b-end").value   = s.end;
+    if (s.course) document.getElementById("b-course").value = s.course;
+    if (s.bActiveCourse || s.activeCourse) {
+      bActiveCourse = s.bActiveCourse || s.activeCourse;
+      document.querySelectorAll("#b-courseTags .course-tag").forEach(b => {
+        if (b.textContent === bActiveCourse) b.classList.add("active");
       });
-    } catch {}
-  }
+    }
+    if (s.bActiveDuration != null || s.activeDuration != null) {
+      bActiveDuration = s.bActiveDuration ?? s.activeDuration;
+      document.querySelectorAll("#b-timeTags .time-tag").forEach(b => {
+        if (Number(b.dataset.hours) === bActiveDuration) b.classList.add("active");
+      });
+    }
+    if (s.name)   document.getElementById("b-name").value   = s.name;
+    if (s.remark) document.getElementById("b-remark").value = s.remark;
+    if (s.bPeople || s.people) {
+      bPeople = s.bPeople || s.people;
+      document.getElementById("b-peopleVal").textContent = bPeople;
+    }
+    if (s.tags) s.tags.forEach(tag => {
+      bActiveTags.add(tag);
+      document.querySelectorAll("#b-reqTags .tag-btn").forEach(b => {
+        if (b.textContent === tag) b.classList.add("active");
+      });
+    });
+  } catch {}
+}
 
-  // ── 启动 ──────────────────────────────────────────
-  init();
+// ═══════════════════════════════════════════════
+//  教室提醒逻辑
+// ═══════════════════════════════════════════════
+function nSelectDuration(hours, btn) {
+  if (nActiveDuration === hours) {
+    nActiveDuration = null; btn.classList.remove("active");
+  } else {
+    nActiveDuration = hours;
+    document.querySelectorAll("#n-timeTags .time-tag").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("n-end").value = calcEndTime(document.getElementById("n-start").value, hours);
+  }
+}
+function nOnStartChange() {
+  if (nActiveDuration !== null)
+    document.getElementById("n-end").value = calcEndTime(document.getElementById("n-start").value, nActiveDuration);
+}
+
+function nSelectCourse(c, btn) {
+  if (nActiveCourse === c) { nActiveCourse = ""; btn.classList.remove("active"); }
+  else {
+    nActiveCourse = c;
+    document.querySelectorAll("#n-courseTags .course-tag").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("n-course").value = "";
+  }
+}
+
+function nGenerate() {
+  const name   = document.getElementById("n-name").value.trim();
+  const course = nActiveCourse || document.getElementById("n-course").value.trim();
+  const date   = document.getElementById("n-date").value;
+  const start  = document.getElementById("n-start").value;
+  const end    = document.getElementById("n-end").value;
+  const room   = document.getElementById("n-room").value.trim();
+
+  const sep = "--------------";
+  const lines = [
+    sep,
+    `课程：${name ? name + "同学" : ""}${course ? "（" + course + "）" : ""}`,
+    `时间：${fmtDateNotify(date)}${start && end ? " " + start + "-" + end : ""}`,
+    `教室：${room}`,
+    sep,
+  ];
+  nText = lines.join("\n");
+  document.getElementById("n-output").textContent = nText;
+  nSaveState();
+}
+
+async function nCopy() {
+  if (!nText) { showToast("请先点击「生成」"); return; }
+  await doCopy(nText, "n-copyBtn");
+}
+
+function nClear() {
+  document.getElementById("n-name").value  = "";
+  document.getElementById("n-course").value = "";
+  document.getElementById("n-date").value  = todayValue();
+  document.getElementById("n-start").value = "14:00";
+  document.getElementById("n-end").value   = "16:00";
+  document.getElementById("n-room").value  = "";
+  nActiveCourse = ""; nActiveDuration = null;
+  document.querySelectorAll("#n-courseTags .course-tag, #n-timeTags .time-tag")
+    .forEach(b => b.classList.remove("active"));
+  nText = "";
+  document.getElementById("n-output").innerHTML = '<span class="output-placeholder">点击「生成」查看结果</span>';
+  localStorage.removeItem("n_state");
+  showToast("已清空");
+}
+
+function nSaveState() {
+  localStorage.setItem("n_state", JSON.stringify({
+    name:  document.getElementById("n-name").value,
+    course: document.getElementById("n-course").value,
+    nActiveCourse, nActiveDuration,
+    date:  document.getElementById("n-date").value,
+    start: document.getElementById("n-start").value,
+    end:   document.getElementById("n-end").value,
+    room:  document.getElementById("n-room").value,
+  }));
+}
+
+function nRestoreState() {
+  const raw = localStorage.getItem("n_state");
+  if (!raw) return;
+  try {
+    const s = JSON.parse(raw);
+    if (s.name)  document.getElementById("n-name").value  = s.name;
+    if (s.course) document.getElementById("n-course").value = s.course;
+    if (s.nActiveCourse) {
+      nActiveCourse = s.nActiveCourse;
+      document.querySelectorAll("#n-courseTags .course-tag").forEach(b => {
+        if (b.textContent === nActiveCourse) b.classList.add("active");
+      });
+    }
+    if (s.nActiveDuration != null) {
+      nActiveDuration = s.nActiveDuration;
+      document.querySelectorAll("#n-timeTags .time-tag").forEach(b => {
+        if (Number(b.dataset.hours) === nActiveDuration) b.classList.add("active");
+      });
+    }
+    if (s.date)  document.getElementById("n-date").value  = s.date;
+    if (s.start) document.getElementById("n-start").value = s.start;
+    if (s.end)   document.getElementById("n-end").value   = s.end;
+    if (s.room)  document.getElementById("n-room").value  = s.room;
+  } catch {}
+}
+
+// ═══════════════════════════════════════════════
+//  深夜模式
+// ═══════════════════════════════════════════════
+function toggleTheme() {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  applyTheme(next);
+  localStorage.setItem("theme", next);
+}
+function applyTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
+}
+
+// ═══════════════════════════════════════════════
+//  共用
+// ═══════════════════════════════════════════════
+async function doCopy(text, btnId) {
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById(btnId);
+    btn.textContent = "已复制 ✓"; btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "复制"; btn.classList.remove("copied"); }, 2000);
+    showToast("已复制到剪贴板");
+  } catch { showToast("复制失败，请手动选中复制"); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+// ── 启动 ──
+init();
 </script>
 </body>
 </html>
