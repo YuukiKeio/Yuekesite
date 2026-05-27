@@ -768,7 +768,7 @@ function pGenerate(){
 
   // 文件名
   const parts=[(course+name).trim(),fmtDateShort(date),cls,schoolRoom,CN_NUM[pFileCount]+"个文件"];
-  pFileName=parts.filter(Boolean).join("_");
+  pFileName=parts.filter(Boolean).join("/");
 
   // 邮件正文
   const fileList=pFileNames.slice(0,pFileCount).map(f=>`* ${f||"（未填写）"}`).join("\n");
